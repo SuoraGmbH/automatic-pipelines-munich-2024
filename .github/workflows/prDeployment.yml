@@ -1,0 +1,36 @@
+name: Do a PR deployment
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  testDeployment:
+    name: Do a test deployment of the PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Build
+        run: npm run build
+      - name: Generate domain name
+        uses: rlespinasse/github-slug-action@v5
+      - name: Deploy
+        shell: bash
+        run: |
+          echo "Deploying to preview environment to ${{ env.GITHUB_REF_SLUG_URL }}.preview.example.com"
+      - name: Announce deployment URL in PR
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          message: Preview deployed to ${{ env.GITHUB_REF_SLUG_URL }}.preview.example.com
+          comment-tag: preview-deployment
